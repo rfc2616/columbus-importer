@@ -1,0 +1,20 @@
+<html>
+  <title>Columbus Importer for Community Lands Monitoring</title>
+  <script>
+    var ipc = require('ipc');
+    ipc.on('has_available_files', function(available_files) {
+      document.getElementById('available_files').innerHTML = available_files
+    });
+    ipc.send('get_available_files');
+  </script>
+  <body>
+    <h1>Columbus Importer</h1>
+    We are using io.js <script>document.write(process.version)</script>
+    and Electron <script>document.write(process.versions['electron'])</script>.
+    <p>
+    Files available to import:
+    <div id="available_files">
+      Searching for Columbus data ...
+    </div>
+  </body>
+</html>
