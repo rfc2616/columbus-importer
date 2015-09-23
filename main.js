@@ -6,7 +6,7 @@ var ipc = require('ipc');
 var parse = require('csv-parse');
 var uuid = require('uuid');
 
-FOLDER = "/volumes/COLUMBUS"
+FOLDER = "/Volumes/COLUMBUS"
 
 ipc.on('get_available_files', function(event, arg) {
   list = fs.readdirSync(FOLDER);
@@ -21,6 +21,10 @@ ipc.on('import_file', function(event, file) {
   event.sender.send('import_progress', "Importing "+file);
   var guts = fs.readFileSync("" + FOLDER + "/" + file, 'utf8')
   event.sender.send('import_progress', "Importing "+file+" ("+(guts.split(/\r\n|\r|\n/).length)+" lines)");
+  var feature_collection_all = {
+    "type": "FeatureCollection",
+    features: []
+  };
   parse(guts,function(err,output){
     if(err){
       event.sender.send('import_progress', "Failed: "+err);
@@ -67,23 +71,29 @@ ipc.on('import_file', function(event, file) {
               deviceId: 'Columbus V900'
             }
           }
+          if(e['tag'] == 'V') {
+            properties['voice_memo'] = e['vox'].replace("\u0000",'.WAV')
+          }
           var geometry = {
             "type": "Point",
             "coordinates": float_coordinates
           };
-          var geojson = {
+          var feature = {
             "type": "Feature",
             "geometry": geometry,
             "properties": properties
           };
-          console.log(JSON.stringify(geojson, null, 4));
+          feature_collection_all['features'].push(feature);
         } else {
           // we don't do anything with tracks yet
         }
       }
+      var target = FOLDER + "/" + file.replace(/CSV/i, 'geojson')
+      console.log(target)
+      fs.writeFileSync(target, JSON.stringify(feature_collection_all, null, 4), 'utf8');
+      event.sender.send('import_progress', "Imported "+file);
     }
   });
-  event.sender.send('import_progress', "Imported "+file);
 });
 
 // Report crashes to our server.
