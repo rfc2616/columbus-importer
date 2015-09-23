@@ -12,7 +12,18 @@ ipc.on('get_available_files', function(event, arg) {
   list = fs.readdirSync(FOLDER);
   _results = [];
   for (_i = 0, _len = list.length; _i < _len; _i++) {
-    _results.push(list[_i]);
+    var file = list[_i];
+    var target = FOLDER + "/" + file.replace(/CSV/i, 'geojson')
+    if(file.match(/\.CSV$/i)){
+      // did we already export this file?
+      var error, stats;
+      try {
+        stats = fs.lstatSync(target);
+      } catch (_error) {
+        // if target does NOT exist, we will end up here: list it
+        _results.push(file);
+      }
+    }
   }
   event.sender.send('has_available_files', _results);
 });

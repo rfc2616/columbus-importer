@@ -7,23 +7,22 @@
       afdiv.innerHTML = ""
       for (_i = 0, _len = available_files.length; _i < _len; _i++) {
         var f = available_files[_i]
-        if(f.match(/\.CSV$/i)){
-          var a = document.createElement("a")
-          a.setAttribute("data-name",f)
-          a.setAttribute("href","#")
-          var d = document.createElement("div")
-          d.innerHTML = f
-          a.appendChild(d)
-          afdiv.appendChild(a)
-          a.onclick = function(){
-            ipc.send("import_file", this.getAttribute("data-name"));
-          }
+        var a = document.createElement("a")
+        a.setAttribute("data-name",f)
+        a.setAttribute("href","#")
+        var d = document.createElement("div")
+        d.innerHTML = f
+        a.appendChild(d)
+        afdiv.appendChild(a)
+        a.onclick = function(){
+          ipc.send("import_file", this.getAttribute("data-name"));
         }
       }
     });
     ipc.on('import_progress', function(import_progress) {
       var ipdiv = document.getElementById('import_progress')
       ipdiv.innerHTML = import_progress
+      ipc.send('get_available_files');
     })
     ipc.send('get_available_files');
   </script>
