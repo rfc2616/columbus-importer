@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "main": "main.js",
   "dependencies": {
-    "csv-parse": "^1.0.0"
+    "csv-parse": "^1.0.0",
+    "uuid": "^2.0.1"
   }
 }
