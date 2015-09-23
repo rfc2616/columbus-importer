@@ -3,14 +3,86 @@ var BrowserWindow = require('browser-window');  // Module to create native brows
 
 var fs = require('fs');
 var ipc = require('ipc');
+var parse = require('csv-parse');
+var uuid = require('uuid');
+
+FOLDER = "/volumes/COLUMBUS"
 
 ipc.on('get_available_files', function(event, arg) {
-  list = fs.readdirSync("/volumes/COLUMBUS");
+  list = fs.readdirSync(FOLDER);
   _results = [];
   for (_i = 0, _len = list.length; _i < _len; _i++) {
     _results.push(list[_i]);
   }
   event.sender.send('has_available_files', _results);
+});
+
+ipc.on('import_file', function(event, file) {
+  event.sender.send('import_progress', "Importing "+file);
+  var guts = fs.readFileSync("" + FOLDER + "/" + file, 'utf8')
+  event.sender.send('import_progress', "Importing "+file+" ("+(guts.split(/\r\n|\r|\n/).length)+" lines)");
+  parse(guts,function(err,output){
+    if(err){
+      event.sender.send('import_progress', "Failed: "+err);
+    } else {
+      for (_i = 0, _len = output.length; _i < _len; _i++) {
+        var row = output[_i];
+        var e = {};
+        e['tag'] = row[1];
+        e['date'] = row[2];
+        e['time'] = row[3];
+        e['latitude'] = row[4];
+        e['longitude'] = row[5];
+        e['height'] = row[6];
+        e['speed'] = row[7];
+        e['heading'] = row[8];
+        e['vox'] = row[9];
+        if(e['tag'] == 'V' || e['tag'] == 'C'){
+          var uuid = uuid.v1();
+          var name = 'Columbus Waypoint'
+          if(e['tag'] == 'V') {
+            name = 'Columbus Voice Memo'
+          }
+          float_coordinates = [];
+          var lat = e['latitude']
+          if(lat.matches(/N/)){
+            float_coordinates.push(parseFloat(lat.replace(/\w/,'')));
+          } else {
+            float_coordinates.push(-parseFloat(lat.replace(/\w/,'')));
+          }
+          var long = e['longitude']
+          if(lat.matches(/E/)){
+            float_coordinates.push(parseFloat(lat.replace(/\w/,'')));
+          } else {
+            float_coordinates.push(-parseFloat(lat.replace(/\w/,'')));
+          }
+          var properties = {
+            'meta': {
+              instanceId: "uuid:" + uuid,
+              instanceName: name,
+              formId: "monitoring_form_v1",
+              version: 1.0,
+              submissionTime: (e['date'] + e['time']),
+              deviceId: 'Columbus V900'
+            };
+          }
+          var geometry = {
+            "type": "Point",
+            "coordinates": float_coordinates
+          };
+          var geojson = {
+            "type": "Feature",
+            "geometry": geometry,
+            "properties": properties
+          };
+          console.log(geojson);
+        } else {
+          // we don't do anything with tracks yet
+        }
+      }
+    }
+  });
+  event.sender.send('import_progress', "Imported "+file);
 });
 
 // Report crashes to our server.
