@@ -38,33 +38,34 @@ ipc.on('import_file', function(event, file) {
         e['heading'] = row[8];
         e['vox'] = row[9];
         if(e['tag'] == 'V' || e['tag'] == 'C'){
-          var uuid = uuid.v1();
+          var instance_uuid = uuid.v1();
           var name = 'Columbus Waypoint'
           if(e['tag'] == 'V') {
             name = 'Columbus Voice Memo'
           }
           float_coordinates = [];
-          var lat = e['latitude']
-          if(lat.matches(/N/)){
-            float_coordinates.push(parseFloat(lat.replace(/\w/,'')));
-          } else {
-            float_coordinates.push(-parseFloat(lat.replace(/\w/,'')));
-          }
           var long = e['longitude']
-          if(lat.matches(/E/)){
-            float_coordinates.push(parseFloat(lat.replace(/\w/,'')));
+          if(long.match(/E/)){
+            float_coordinates.push(parseFloat(long.replace(/[^0-9\.]+/g,'')));
           } else {
-            float_coordinates.push(-parseFloat(lat.replace(/\w/,'')));
+            float_coordinates.push(-parseFloat(long.replace(/[^0-9\.]+/g,'')));
           }
+          var lat = e['latitude']
+          if(lat.match(/N/)){
+            float_coordinates.push(parseFloat(lat.replace(/[^0-9\.]+/g,'')));
+          } else {
+            float_coordinates.push(-parseFloat(lat.replace(/[^0-9\.]+/g,'')));
+          }
+          float_coordinates.push(-parseFloat(e['height']));
           var properties = {
             'meta': {
-              instanceId: "uuid:" + uuid,
+              instanceId: "uuid:" + instance_uuid,
               instanceName: name,
               formId: "monitoring_form_v1",
               version: 1.0,
               submissionTime: (e['date'] + e['time']),
               deviceId: 'Columbus V900'
-            };
+            }
           }
           var geometry = {
             "type": "Point",
@@ -75,7 +76,7 @@ ipc.on('import_file', function(event, file) {
             "geometry": geometry,
             "properties": properties
           };
-          console.log(geojson);
+          console.log(JSON.stringify(geojson, null, 4));
         } else {
           // we don't do anything with tracks yet
         }
