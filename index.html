@@ -24,7 +24,11 @@
       ipdiv.innerHTML = import_progress
       ipc.send('get_available_files');
     })
-    ipc.send('get_available_files');
+    var poll_available_files = function() {
+      ipc.send('get_available_files');
+      setTimeout('poll_available_files()',5000);
+    }
+    poll_available_files();
   </script>
   <body>
     <h1>Columbus Importer</h1>
